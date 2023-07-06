@@ -2,6 +2,7 @@
 import socket
 import tqdm
 import os
+import random
 
 SEPARATOR = "<SEPARATOR>"
 BUFFER_SIZE = 4096 # send 4096 bytes each time step
@@ -10,7 +11,13 @@ host = "192.168.18.3"
 # the port, let's use 5001
 port = 5001
 # the name of file we want to send, make sure it exists
-filename = "Dados/G-1.csv"
+filenames = ["Dados/G-1.csv","Dados/G-2.csv","Dados/G-3.csv","Dados/G-4.csv","Dados/G-5.csv","Dados/G-6.csv"]
+algoritmos = [0,1]
+nomeUsuario = ["Bruna","Jonathas","Royka","Paulo"]
+filename = filenames[random.randint(0,5)]
+algoritmo = algoritmos[random.randint(0,1)]
+usuario = nomeUsuario[random.randint(0,3)]
+
 # get the file size
 filesize = os.path.getsize(filename)
 
@@ -37,6 +44,6 @@ with open(filename, "rb") as f:
         s.sendall(bytes_read)
         # update the progress bar
         progress.update(len(bytes_read))
-s.sendall('Royka,1'.encode())
+s.sendall((usuario+','+str(algoritmo)).encode())
 # close the socket
 s.close()

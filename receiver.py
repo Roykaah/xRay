@@ -65,7 +65,7 @@ while True:
             for line in f2:
                 q+=1
         print(f"Quantidade de linhas: {q}")
-        f.write((','+str(60 if q>40000 else 30)+',1,\n').encode())
+        f.write((','+str(60 if q>40000 else 30)+',0,\n').encode())
         f.close()
     progress.close()
     # close the client socket
