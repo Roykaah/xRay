@@ -8,6 +8,8 @@ import csv
 import os
 import threading
 import shutil
+import datetime
+import krylov
 
 ALGORITMO_CGNE=0
 ALGORITMO_CGNR=1
@@ -50,8 +52,7 @@ def CGNE(H, g, tol):
         p = p1
 
         error = abs(abs(np.linalg.norm(r)) - error )
-        print(error)
-        if iter >= 50:
+        if iter >= 200:
             break
     if(g.shape[0])==50816:
         imgf = np.resize(f, [60, 60])
@@ -60,10 +61,10 @@ def CGNE(H, g, tol):
     
     imgf = np.transpose(imgf)
     return imgf,iter
-
         
 
 def CGNR(H, g, tol):
+
     f = np.zeros([(np.transpose(H)).shape[0], 1])
     r = g 
     z = np.transpose(H) @ r
@@ -85,7 +86,6 @@ def CGNR(H, g, tol):
         z=z1
 
         error = abs(abs(np.linalg.norm(r)) - error )
-        print(error)
         if iter >= 50:
             break
 
@@ -101,10 +101,8 @@ def CGNR(H, g, tol):
 
 
 def regulariza_imagem(H,imagem):
-    #normaliza a imagem   
-    coeficiente = np.max(abs(np.transpose(H)@imagem))[0] * 0.1
-    print(f'coeficiente: {coeficiente}')
-    imagem =  coeficiente/imagem
+    imagem_norm = np.linalg.norm(imagem)
+    imagem /= imagem_norm
     return imagem
 
 def processa_imagem(tipo_de_processamento, nome_arquivo, usuario,modelo):
@@ -120,7 +118,7 @@ def processa_imagem(tipo_de_processamento, nome_arquivo, usuario,modelo):
         H = H2
         pixel = "30x30"
 
-    imagem = regulariza_imagem(H,imagem)
+    #imagem= regulariza_imagem(H,imagem)
 
     if(tipo_de_processamento==ALGORITMO_CGNE):
         imagem_final, iteracoes= CGNE(H, imagem, 1e-4)
@@ -128,7 +126,6 @@ def processa_imagem(tipo_de_processamento, nome_arquivo, usuario,modelo):
     elif(tipo_de_processamento==ALGORITMO_CGNR):
         imagem_final, iteracoes= CGNR(H, imagem, 1e-4)
         algoritmo = "CGNR"
-
     end_time = time.time()
 
     total_time = end_time - start_time
@@ -137,8 +134,8 @@ def processa_imagem(tipo_de_processamento, nome_arquivo, usuario,modelo):
     dictionary = {
         'usuario': usuario,
         'algoritmo': algoritmo,
-        'data_inicio': start_time,
-        'data_fim': end_time,
+        'data_inicio': datetime.datetime.utcfromtimestamp(start_time).strftime('%Y-%m-%d %H:%M:%S'),
+        'data_fim': datetime.datetime.utcfromtimestamp(end_time).strftime('%Y-%m-%d %H:%M:%S'),
         'tm_pixel': pixel,
         'iteracoes': int(iteracoes),
         'id_imagem': usuario + str(start_time) # id unico da imagem
@@ -169,7 +166,7 @@ def testa_processamento():
     print('Começou a fazer os testes de processamento')
     #testa para o algoritmo 1:
     
-    for imagem in ['Dados/G-1.csv', 'Dados/G-4.csv']:
+    for imagem in ['Dados/G-1.csv', 'Dados/G-2.csv','Dados/G-4.csv','Dados/G-5.csv']:
         for algoritmo in [0,1]:
             total_cpu = 0
             total_memoria = 0
@@ -177,7 +174,7 @@ def testa_processamento():
                 time.sleep(0.2)
                 cpu_before = psutil.cpu_percent()
                 memory_before = psutil.virtual_memory().percent
-                processa_imagem(algoritmo, imagem, 'TESTE',60 if imagem == 'Dados/G-1.csv' else 30)
+                processa_imagem(algoritmo, imagem, 'TESTE',60 if imagem == 'Dados/G-1.csv' or imagem == 'Dados/G-2.csv' else 30)
 
                 memory_after = psutil.virtual_memory().percent
                 total_memoria = total_memoria + abs(memory_after - memory_before)
@@ -262,17 +259,18 @@ def espera_ter_espaco(nome_arquivo):
     return shutil.move(nome_arquivo, 'em_processamento/'+nome_arquivo.split('/')[-1])
 
 def main():
-    print('Começou')
+    '''print('Começou')
     processa_imagem(0,'Dados/G-6.csv','TESTE',30)
     print('Acabou')
-    '''testa_processamento()
+    '''
+    testa_processamento()
     #medias_analiticas = [[436.76000000000005, 668467.2], [309.04, 0.0], [481.98, 117145.6], [289.53999999999996, 0.0]]
     while(True):
         proximo_arquivo = escolhe_proximo_arquivo()
         if proximo_arquivo != None:
             usuario,tipo_de_processamento,modelo = divide_arquivo(proximo_arquivo)
             thread = threading.Thread(target=processa_imagem, args=(tipo_de_processamento,proximo_arquivo, usuario, modelo))
-            thread.start()'''
+            thread.start()
             
             
 
